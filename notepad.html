@@ -1,0 +1,341 @@
+<!doctype HTML>
+<html>
+    <head>
+        <title>Notepad</title>
+        <meta name="author" content="me">
+        <meta charset="unicode">
+        
+        <script>
+            var title;
+            var textarea;
+            var value;
+            var doloop = true;
+            var saveOptions = true;
+            
+            var defaultString = "type text here\n\ngo to /bigtext/?help for help and options.";
+            var helpString = "  Help and Options\n\
+====================\n\
+\n\
+To use, put text in the text box.\n\
+Text will be saved.\n\
+\n\
+press ctrl-S to save to a text file.\n\
+\n\
+press alt-S to get a sharable URL.\n\
+\n\
+To set options, set the ? in the url to ?option1,option2,... with option1, option2, etc. being replaced with the option you want.\n\
+\n\
+Example: ?comic,pink,rave\n\
+\n\
+Your current options are: ?{{options}}\n\
+\n\
+The following options are supported:\n\
+ - default\n\
+ - sans         (arial font)\n\
+ - serif        (serif font)\n\
+ - comic        (comic sans font)\n\
+ - mono         (monospaced font)\n\
+ - black        (black text)\n\
+ - grey or gray (grey text)\n\
+ - white        (white text with black background)\n\
+ - red          (red text)\n\
+ - orange       (orange text)\n\
+ - yellow       (yellow text)\n\
+ - green        (green text)\n\
+ - blue         (blue text)\n\
+ - purple       (purple text)\n\
+ - pink         (pink text)\n\
+ - rave         (a rave)\n\
+ - party        (party)\n\
+ - lsd          (its like lsd)\n\
+ - huge         (huge text)\n\
+ - big          (big text)\n\
+ - medium       (medium text)\n\
+ - small        (small text)\n\
+ - line1        (line spacing of 1)\n\
+ - line125      (line spacing of 1.25)\n\
+ - line15       (line spacing of 1.5)\n\
+ - line2        (line spacing of 2)\n\
+ - nopad        (no padding on the sides)\n\
+";
+            
+            window.addEventListener("load", onLoad, false);
+            function onLoad() {
+                title = document.getElementsByTagName("title")[0];
+                textarea = document.getElementById("main");
+                var savedText = window.localStorage.getItem("text");
+                textarea.value = (savedText == null || savedText == undefined) ? defaultString : savedText;
+                if(savedText == null || savedText == undefined) {
+                    window.localStorage.setItem("text", "");
+                }
+                if(window.localStorage.getItem("options") == null || window.localStorage.getItem("options") == undefined) {
+                    window.localStorage.setItem("options", "default");
+                }
+                
+                //get and apply options as css classes
+                var query = document.location.search;
+                var optionsArray;
+                var hash = document.location.hash;
+                if(hash.length > 1) {
+                    textarea.value = hash.slice(1).replace(/%20/g, " ");
+                    saveOptions = false;
+                    doloop = false;
+                }
+                
+                //help mode initializes if the first option is help
+                if(/^\?help/.test(query)) {
+                    console.log("help mode");
+                    doloop = false; //don't save the data by not looping
+                    
+                    var options = window.localStorage.getItem("options");
+                    textarea.value = helpString.replace("{{options}}", options);;
+                    
+                    optionsArray = ["default", "small", "mono", "line15"];
+                }
+                
+                //if the options array isn't already initialized by help, get it from query or storage
+                if(!(optionsArray)) {
+                    if(query.length > 1) {
+                        var options = query.slice(1); //remove ? at beginning
+                        optionsArray = options.split(/[\,\&]{1}/);
+                        if(saveOptions) {
+                            window.localStorage.setItem("options", optionsArray);
+                        }
+                    } else {
+                        var options = window.localStorage.getItem("options");
+                        optionsArray = options.split(/[\,\&]{1}/);
+                    }
+                    optionsArray = optionsArray || []; //null/undefined check
+                }
+                
+                for(var i = 0; i < optionsArray.length; i++) {
+                    var option = optionsArray[i];
+                    document.body.classList.add(option);
+                }
+                
+                //add ? query if there is none
+                if(!/\?{1}.*/.test(document.location.href)) {
+                    document.location.href = document.location.href + "?";
+                }
+                
+                document.addEventListener("keydown", function(e) {
+                    //ctrl s
+                    if(e.keyCode == 83 && e.ctrlKey) {
+                        e.preventDefault(); //prevent default document saving
+                        
+                        var a = document.createElement('a');
+                        a.href = "data:text/plain;base64," + btoa(textarea.value);
+                        a.download = "notes.txt";
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+                    //alt s
+                    else if(e.keyCode == 83 && e.altKey) {
+                        e.preventDefault(); //prevent default whatever
+                        
+                        document.location.hash = textarea.value.replace(/\s/g, "%20");
+                        doloop = false //dont save
+                    }
+                });
+                
+                if(doloop) {
+                    loop();
+                }
+            }
+            function loop() {
+                if(textarea.value != value) {
+                    //if its not just whitespace
+                    if (/\S/.test(textarea.value)) {
+                        document.title = textarea.value;
+                    }
+                    else {
+                        document.title = "Notepad";
+                    }
+                    window.localStorage.setItem("text", textarea.value);
+                    value = textarea.value;
+                }
+                setTimeout(loop, 50);
+            }
+        </script>
+        <style>
+            :root, html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+            body, body.default {
+                font-family: "Arial", sans-serif;
+                font-size: 4em;
+            }
+            
+            /* jokes */
+            body.rave {
+                text-shadow: 2px 2px #ff0000,
+                             2px -2px #ffff00,
+                             -2px -2px #00ff00,
+                             -2px 2px #0000ff;
+                color: #ffffff;
+            }
+            body.party {
+                animation: 0.075s infinite linear party;
+                -webkit-animation: 0.075s infinite linear party;
+            }
+            @keyframes party {
+                0% {
+                    transform: skew(0deg) translate(0, 0);
+                }
+                16% {
+                    transform: skew(0.5deg) translate(-0.03em, 0);
+                }
+                33% {
+                    transform: skew(0.25deg) translate(0, 0);
+                }
+                50% {
+                    transform: skew(0deg) translate(0, 0.01em);
+                }
+                66% {
+                    transform: skew(-0.5deg) translate(0.03em, 0);
+                }
+                83% {
+                    transform: skew(-0.25deg) translate(0, 0);
+                }
+                100% {
+                    transform: skew(0deg) translate(0, -0.01em);
+                }
+            }
+            body.lsd > #main {
+                animation: 0.333s infinite linear lsd;
+                -webkit-animation: 0.333s infinite linear lsd;
+            }
+            @keyframes lsd {
+                0% {
+                    filter: hue-rotate(0deg);
+                }
+                16% {
+                    filter: hue-rotate(60deg);
+                }
+                33% {
+                    filter: hue-rotate(120deg);
+                }
+                50% {
+                    filter: hue-rotate(180deg);
+                }
+                66% {
+                    filter: hue-rotate(240deg);
+                }
+                83% {
+                    filter: hue-rotate(300deg);
+                }
+                100% {
+                    filter: hue-shift(360deg);
+                }
+            }
+            
+            /* font family options */
+            body.sans {
+                font-family: "Arial", sans-serif;
+            }
+            body.serif {
+                font-family: serif;
+            }
+            body.comic {
+                font-family: "Comic Sans MS", fantasy;
+            }
+            body.mono {
+                font-family: monospace;
+            }
+            
+            /* color options */
+            body.grey, body.gray {
+                background: #ffffff;
+                color: #888888;
+            }
+            body.white {
+                background: #000000;
+                color: #ffffff;
+            }
+            body.black {
+                color: #000000;
+            }
+            body.red {
+                color: #ff0000;
+            }
+            body.orange {
+                color: #ff8800;
+            }
+            body.yellow {
+                color: #ffff00;
+            }
+            body.green {
+                color: #00ff00;
+            }
+            body.blue {
+                color: #0000ff;
+            }
+            body.purple {
+                color: #880088;
+            }
+            body.pink {
+                color: #ff00ff;
+            }
+            
+            /* font size options */
+            body.huge, body.yuge {
+                font-size: 16em;
+            }
+            body.bigger {
+                font-size: 8em;
+            }
+            body.big {
+                font-size: 4em;
+            }
+            body.medium {
+                font-size: 2em;
+            }
+            body.small {
+                font-size: 1em;
+            }
+            
+            /* line spacing options */
+            body.line1 {
+                line-height: 1;
+            }
+            body.line125 {
+                line-height: 1.25;
+            }
+            body.line15 {
+                line-height: 1.5;
+            }
+            body.line2 {
+                line-height: 2;
+            }
+            
+            /* misc options */
+            body.nopad > #main {
+                padding: 0.75rem;
+            }
+            
+            #main {
+                width: 100%;
+                height: 100%;
+                resize: none;
+                padding: 2rem;
+                border: 0;
+                outline: 0;
+                font: inherit;
+                color: inherit;
+                text-shadow: inherit;
+                overflow: auto;
+                background: inherit;
+                box-sizing: border-box;
+                vertical-align: bottom;
+            }
+        </style>
+    </head>
+    <body class="">
+        <textarea id="main" spellcheck="false"></textarea>
+    </body>
+</html>
